@@ -34,11 +34,27 @@ block content
   script(src="/socket.io/socket.io.js")
   script.
     var socket = io.connect(window.location.origin);
+    
+    var pieceType = {
+      'king': '\u265A'
+    , 'queen': '\u265B'
+    , 'rook': '\u265C'
+    , 'bishop': '\u265D'
+    , 'knight': '\u265E'
+    , 'pawn': '\u265F'
+    }
+
+    var color = {
+        black: 'black'
+      , white: 'white'
+    }
 
     var blackUsername, whiteUsername, myUsername
 
     //number of menu button clicks
     var numClicks = 0
+
+    var table = $('#t')
 
     //init menu
     var updateMenu = function (numClicks) {
@@ -97,33 +113,6 @@ block content
       $('.fadedOverlay').hide()
     })
 
-    var table = $('#t').get(0)
-
-    var pieceType = {
-      'king': '\u265A'
-    , 'queen': '\u265B'
-    , 'rook': '\u265C'
-    , 'bishop': '\u265D'
-    , 'knight': '\u265E'
-    , 'pawn': '\u265F'
-    }
-    
-    // var col = {
-    //     'a': 1
-    //   , 'b': 2
-    //   , 'c': 3
-    //   , 'd': 4
-    //   , 'e': 5
-    //   , 'f': 6
-    //   , 'g': 7
-    //   , 'h': 8
-    // }
-
-    var color = {
-        black: 'black'
-      , white: 'white'
-    }
-
     //selected piece must set row first, then col, or compare wont work
     var selectedLocation = null
       , boardRepresentation = []
@@ -132,59 +121,35 @@ block content
     //init dom board
     ;(function () {
       for(var r=8; r>0; r--) {
-        var newRow = document.createElement('tr')
-        newRow.setAttribute('class', 'board')
-
-        var txt = document.createTextNode(r)
-
-        var rCol = document.createElement('td')
-        rCol.setAttribute('class', 'descriptor')
-        rCol.appendChild(txt)
-
-        newRow.appendChild(rCol)
+        var newRow = $(document.createElement('tr')).attr('class', 'board')
+          .append($(document.createElement('td')).attr('class', 'descriptor').append($(document.createTextNode(r))))
 
         for(var c=0; c<8; c++) {
-          var newCol = document.createElement('td')
-          newCol.setAttribute('class', 'board')
-          newRow.appendChild(newCol)
+          newRow.append($(document.createElement('td')).attr('class', 'board'))
         }
-        table.appendChild(newRow)
+        table.append(newRow)
       }
 
-      var newRow = document.createElement('tr')
-      var newCol = document.createElement('td')
-      newRow.appendChild(newCol)
+      var newRow = $(document.createElement('tr')).append($(document.createElement('td')))
 
       //add column letters at the bottom
       for(var c=0, letter='a'; c<8; c++, letter=String.fromCharCode(letter.charCodeAt(0)+1)) {
-        var textNode = document.createTextNode(letter)
-
-        var newCol = document.createElement('td')
-        newCol.setAttribute('class', 'descriptor')
-        newCol.appendChild(textNode)
-
-        newRow.appendChild(newCol)
+        newRow.append($(document.createElement('td')).attr('class', 'descriptor').append($(document.createTextNode(letter))))
       }
 
-      table.appendChild(newRow)
+      table.append(newRow)
     })()
 
     //takes a rowNumber and colNumber on the chess grid (not in the dom table)
     var updateDomCell = function (r, c) {
       var piece = boardRepresentation[r-1][c-1]
 
-      var cell = $('table').find('tr').eq(8-r).find('td').eq(c).get(0)
-      cell.innerHTML = ''
+      var cell = $('table').find('tr').eq(8-r).find('td').eq(c)
+      cell.html('')
 
       if(piece == null) return
 
-      var txt = document.createTextNode(piece.pieceType)
-
-      var span = document.createElement('span')
-      span.setAttribute('class', piece.color)
-      span.appendChild(txt)
-      
-      cell.appendChild(span)
+      cell.append($(document.createElement('span')).attr('class', piece.color).append($(document.createTextNode(piece.pieceType))))
     }
 
     var addToGraveyard = function (piece) {
@@ -262,19 +227,14 @@ block content
     }
 
     var setPiece = function (loc, piece) {
-      if(piece!=null&&boardRepresentation[loc.row-1][loc.col-1]) addToGraveyard(boardRepresentation[loc.row-1][loc.col-1])
+      if(piece!=null && getPiece(loc)!=null) addToGraveyard(getPiece(loc))
+
       boardRepresentation[loc.row-1][loc.col-1] = piece
 
-
-      if(piece && (loc.row==1||loc.row==8)&&piece.pieceType == pieceType.pawn) piece.pieceType = pieceType.queen
+      if(piece!=null && (loc.row==1||loc.row==8)&&piece.pieceType == pieceType.pawn) piece.pieceType = pieceType.queen
 
       updateDomCell(loc.row, loc.col)
     }
-
-    var sameLocation = function (loc1, loc2) {
-      return JSON.stringify(loc1)==JSON.stringify(loc2)
-    }
-
 
     var validMove = function (oldLoc, newLoc) {
       var myPiece = getPiece(oldLoc)
@@ -386,6 +346,10 @@ block content
           row: 8-jQueryElem.parent().index()
         , col: jQueryElem.index()
       }
+    }
+
+    var sameLocation = function (loc1, loc2) {
+      return JSON.stringify(loc1)==JSON.stringify(loc2)
     }
 
     $('td.board').click(function () {
