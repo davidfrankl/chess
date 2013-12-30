@@ -3,10 +3,9 @@ extend layout
 block content
   div.row.gray
     div.col-xs-8
-      div
-        div.tableContainer
-          table#t
-          p#opponent
+      div.tableContainer
+        table#t
+        p#opponent
     div.col-xs-4
       div.infobox#black
         ul
@@ -38,9 +37,10 @@ block content
 
     var blackUsername, whiteUsername, myUsername
 
-    //init menu
-    var menu = $('#menu').get(0)
+    //number of menu button clicks
+    var numClicks = 0
 
+    //init menu
     var updateMenu = function (numClicks) {
       switch (numClicks) {
         case 1:
@@ -66,7 +66,6 @@ block content
       else $('#button').attr('disabled', '')
     })
 
-    var numClicks = 0
     $('#button').click(function () {
       numClicks++
       switch (numClicks) {
@@ -79,26 +78,6 @@ block content
       $(this).trigger('blur')
       updateMenu(numClicks)
     })
-
-    var updateAvailableOpponents = function (opponentUsernames) {
-      opponentUsernames.forEach(function (opponentUsername) {
-        $('#availableOpponentsRadioGroup')
-          .append(
-            $(document.createElement('div'))
-              .addClass('radio')
-              .append(
-                $(document.createElement('label'))
-                  .append(
-                    $(document.createElement('input')).attr('type', 'radio').attr('name', 'availableOpponents').attr('value', opponentUsername)
-                  )
-                  .append(
-                    $(document.createTextNode(opponentUsername))
-                  )
-              )
-          )
-      })
-      $('#availableOpponentsRadioGroup').find('input').first().attr('checked', 'true')
-    }
 
     var startGame = function (data) {
       blackUsername = data.blackUsername

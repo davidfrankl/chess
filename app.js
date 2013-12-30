@@ -31,17 +31,6 @@ app.get('/', function (req, res) {
   res.render('index')
 })
 
-io.sockets.emit('newMove', {
-  oldLoc: {
-      row: 2
-    , col: 1
-  }
-, newLoc: {
-      row: 3
-    , col: 1
-  }
-})
-
 var addAvailablePlayer = function (username, next) {
   new AvailablePlayer({
     username: username
@@ -58,10 +47,8 @@ var createGame = function (username1, username2, next) {
   var args = Array.prototype.slice.call(arguments);
 
   var whitePlayer = Math.floor(Math.random()*2)
-  var blackPlayer = whitePlayer==0? 1 : 0
+    , blackPlayer = whitePlayer==0? 1 : 0
 
-  console.log('player nums: '+whitePlayer+', '+blackPlayer)
-  console.log('args: '+JSON.stringify(args))
   var f = ff(function () {
     console.log('players: '+JSON.stringify([arguments[whitePlayer], arguments[blackPlayer]]))
     new Game({
@@ -75,12 +62,11 @@ var createGame = function (username1, username2, next) {
 
 io.sockets.on('connection', function (socket) {
   var username = null
+
   socket.on('createUsernameRequestOpponent', function (data) {
+    if(!username) username = data.username
+    
     var f = ff(function () {
-      if(!username) {
-        username = data.username
-      }
-    }, function () {
       AvailablePlayer.find().exec(f.slot())
     }, function (players) {
       if(players.length) {
@@ -89,9 +75,7 @@ io.sockets.on('connection', function (socket) {
         AvailablePlayer.remove({ _id: players[0]._id }).exec(f.slot())
 
         createGame(username, otherUsername, function (data) {
-          data.myUsername = username
-          socket.emit('startGame', data)
-          socket.broadcast.emit('startGame', data)
+          io.sockets.emit('startGame', data)
         })
       } else {
         addAvailablePlayer(username, f.slot())
@@ -107,23 +91,6 @@ io.sockets.on('connection', function (socket) {
   socket.on('disconnect', function () {
     removeAvailablePlayer(username)
   })
-
-  // socket.emit('newMove', {
-  //   oldLoc: {
-  //       row: 2
-  //     , col: 1
-  //   }
-  // , newLoc: {
-  //       row: 3
-  //     , col: 1
-  //   }
-  // })
-
-  // io.sockets.emit('this', { will: 'be received by everyone'});
-
-  // socket.on('private message', function (from, ms) {
-  //   console.log('I received a private message by ', from, ' saying ', msg);
-  // });
 });
 
 
