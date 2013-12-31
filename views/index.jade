@@ -8,8 +8,12 @@ block content
         p#opponent
     div.col-xs-6
       div.infobox#black
+        h3
+          span &#x25A0;
         ul
       div.infobox#white
+        h3
+          span &#x25A0;
         ul
   div.fadedOverlay
     div#menu
@@ -56,6 +60,7 @@ block content
 
     var table = $('#t')
 
+    //display taken pieces
     var graveyardPieces = {
         black: []
       , white: []
@@ -78,7 +83,6 @@ block content
               $(document.createTextNode(piece.pieceType)))))
       })
     }
-
     var addToGraveyard = function (piece) {
       var infobox = piece.color==color.black? $('#black') : $('#white')
 
@@ -139,12 +143,12 @@ block content
       blackUsername = data.blackUsername
       whiteUsername = data.whiteUsername
 
-      $('#black').prepend($(document.createElement('h3'))
-        .append($(document.createElement('span')).text('\u25A0'))
-        .append($(document.createTextNode(' '+blackUsername))))
-      $('#white').prepend($(document.createElement('h3'))
-        .append($(document.createElement('span')).text('\u25A0'))
-        .append($(document.createTextNode(' '+whiteUsername))))
+      $('#black h3')
+        .append($(document.createTextNode(' '+blackUsername)))
+        .append($(document.createElement('span')).text('(Up Now)').addClass('hidden').addClass('currentPlayerIndicator'))
+      $('#white h3')
+        .append($(document.createTextNode(' '+whiteUsername)))
+        .append($(document.createElement('span')).text('(Up Now)').addClass('currentPlayerIndicator'))
     }
 
     socket.on('startGame', function (data) {
@@ -365,6 +369,11 @@ block content
 
     var changeActivePlayer = function () {
       activePlayerColor = activePlayerColor==color.white? color.black : color.white 
+
+      $('.currentPlayerIndicator').addClass('hidden')
+      var elem =  activePlayerColor==color.white? $('#white') : $('#black')
+
+      elem.find('.currentPlayerIndicator').removeClass('hidden')
     }
 
     var move = function (oldLoc, newLoc) {
