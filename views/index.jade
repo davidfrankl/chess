@@ -14,7 +14,7 @@ block content
   div.fadedOverlay
     div#menu
       h1#header Select a Game Type
-      #content
+      #content.clearfix
         p#subtext
         div#gameTypeRadioGroup
           div.radio
@@ -29,12 +29,12 @@ block content
           div.form-group
             label Username
             input.form-control(type='text', name='username', placeholder='username')
-        button#button.btn.btn-primary(type='button') Next
+        button#button.btn.btn-primary.pull-right(type='button') Next
 
   script(src="/socket.io/socket.io.js")
   script.
     var socket = io.connect(window.location.origin);
-    
+
     var pieceType = {
       'king': '\u265A'
     , 'queen': '\u265B'
@@ -94,6 +94,12 @@ block content
       $(this).trigger('blur')
       updateMenu(numClicks)
     })
+
+    $(document).keypress(function(e) {
+      if(e.which == 13) {
+        if(!$('#button').attr('disabled')) $('#button').click()
+      }
+    });
 
     var startGame = function (data) {
       blackUsername = data.blackUsername

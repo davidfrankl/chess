@@ -100,13 +100,12 @@ tr.board:nth-of-type(2n) td.board:nth-of-type(2n).clicked {
   position: fixed;
 }
 .fadedOverlay #menu {
-  width: 500px;
+  width: 375px;
   background-color: #333;
   color: #fff;
   border-radius: 10px;
-  margin-left: 100px;
-  margin-top: 100px;
-  padding-bottom: 20px;
+  margin: 100px auto;
+  padding: 10px;
 }
 .fadedOverlay #menu li.selected {
   font-weight: bold;
@@ -114,12 +113,14 @@ tr.board:nth-of-type(2n) td.board:nth-of-type(2n).clicked {
 }
 .fadedOverlay #menu h1 {
   text-align: center;
+  margin: 10px 0;
 }
-.fadedOverlay #menu #content {
-  margin-left: 20px;
+.fadedOverlay #menu .radio {
+  margin-left: 5px;
 }
+.fadedOverlay #menu #button,
 .fadedOverlay #menu .form-control {
-  width: 200px;
+  width: 100%;
 }
 .hidden {
   display: none;
