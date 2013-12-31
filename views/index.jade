@@ -2,11 +2,11 @@ extend layout
 
 block content
   div.row.gray
-    div.col-xs-8
+    div.col-xs-6
       div.tableContainer
         table#t
         p#opponent
-    div.col-xs-4
+    div.col-xs-6
       div.infobox#black
         ul
       div.infobox#white
@@ -55,6 +55,40 @@ block content
     var numClicks = 0
 
     var table = $('#t')
+
+    var graveyardPieces = {
+        black: []
+      , white: []
+    }
+    var sortGraveyardPieces = function (color) {
+      graveyardPieces[color].sort(function (a, b) {
+        var pieces = Object.keys(pieceType).map(function (p) { return pieceType[p] })
+        return pieces.indexOf(a.pieceType) - pieces.indexOf(b.pieceType)
+      })
+    }
+    var displayGraveyardPieces = function (pieceColor) {
+      var infobox = pieceColor==color.black? $('#black') : $('#white')
+
+      infobox.find('ul').html('')
+
+      graveyardPieces[pieceColor].forEach(function (piece) {
+        infobox.find('ul').append(
+          $(document.createElement('li')).append(
+            $(document.createElement('span')).attr('class', piece.color).append(
+              $(document.createTextNode(piece.pieceType)))))
+      })
+    }
+
+    var addToGraveyard = function (piece) {
+      var infobox = piece.color==color.black? $('#black') : $('#white')
+
+      graveyardPieces[piece.color].push(piece)
+      console.log('graveyardPieces: '+JSON.stringify(graveyardPieces[piece.color]))
+      sortGraveyardPieces(piece.color)
+      console.log('graveyardPieces: '+JSON.stringify(graveyardPieces[piece.color]))
+
+      displayGraveyardPieces(piece.color)
+    }
 
     //init menu
     var updateMenu = function (numClicks) {
@@ -156,11 +190,6 @@ block content
       if(piece == null) return
 
       cell.append($(document.createElement('span')).attr('class', piece.color).append($(document.createTextNode(piece.pieceType))))
-    }
-
-    var addToGraveyard = function (piece) {
-      var infobox = piece.color==color.black? $('#black') : $('#white')
-      infobox.find('ul').append($(document.createElement('li')).append($(document.createTextNode(piece.pieceType))))
     }
 
     //init board configuration

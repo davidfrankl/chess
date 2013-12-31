@@ -12,6 +12,13 @@ body
       -ms-user-select: none;
       user-select: none;
 
+  span
+    font-size 32px
+  span.black
+    color #000
+  span.white
+    color #fff
+
   td.board
     font-size 32px
     border 2px solid #009
@@ -21,11 +28,6 @@ body
     max-height 50px
     padding 0
     text-align center
-
-    .black
-      color #000
-    .white
-      color #fff
     .black,.white
       &:hover
         cursor pointer
@@ -38,6 +40,7 @@ body
       font-size 40px
     ul
       list-style-type none
+      padding 0
       li
         display inline
     &#black 

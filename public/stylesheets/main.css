@@ -12,6 +12,15 @@ body .tableContainer table {
   -ms-user-select: none;
   user-select: none;
 }
+body span {
+  font-size: 32px;
+}
+body span.black {
+  color: #000;
+}
+body span.white {
+  color: #fff;
+}
 body td.board {
   font-size: 32px;
   border: 2px solid #009;
@@ -21,12 +30,6 @@ body td.board {
   max-height: 50px;
   padding: 0;
   text-align: center;
-}
-body td.board .black {
-  color: #000;
-}
-body td.board .white {
-  color: #fff;
 }
 body td.board .black:hover,
 body td.board .white:hover {
@@ -43,6 +46,7 @@ body .infobox span:nth-of-type(1) {
 }
 body .infobox ul {
   list-style-type: none;
+  padding: 0;
 }
 body .infobox ul li {
   display: inline;
