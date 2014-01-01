@@ -32,7 +32,11 @@ block content
           div.radio
             label
               input(type='radio', name='gameType', value='localPlay')
-              | Local Play (2-player)
+              | Local vs. Local (2-player)
+          div.radio
+            label
+              input(type='radio', name='gameType', value='computerPlay')
+              | Local vs. Computer (1-player)
         div#createUsername.hidden
           div.form-group
             label Username
@@ -51,6 +55,13 @@ block content
     , 'knight': '\u265E'
     , 'pawn': '\u265F'
     }
+
+    var gameTypes = {
+        'local': 'local'
+      , 'computer': 'computer'
+      , 'global': 'global'
+    }
+    var gameType = gameTypes.local
 
     var color = {
         black: 'black'
@@ -74,8 +85,6 @@ block content
     var selectedLocation = null
       , boardRepresentation = []
       , activePlayerColor = color.white
-
-    var localPlay = true
 
     var sortGraveyardPieces = function (color) {
       graveyardPieces[color].sort(function (a, b) {
@@ -118,7 +127,17 @@ block content
             })
             return
           }
-          localPlay = false
+          if($('[name="gameType"]:checked').attr('value')=='computerPlay') {
+            $('.fadedOverlay').hide()
+            startGame({
+                blackUsername: 'Computer'
+              , whiteUsername: 'Player 1'
+            })
+            gameType = gameTypes.computer
+            return
+          }
+         
+          gameType = gameTypes.global
           $('#gameTypeRadioGroup').hide()
           $('#createUsername').removeClass('hidden').find('input').focus()
           $('#header').text('Choose a username:')
@@ -299,6 +318,8 @@ block content
     var validMove = function (oldLoc, newLoc) {
       var myPiece = getPiece(oldLoc)
 
+      if(!myPiece) return false
+
       //players can't move other players piece
       if(myPiece.color!=activePlayerColor) return false
 
@@ -461,7 +482,7 @@ block content
     }
 
     $('td.board').click(function () {
-      if(!localPlay) {
+      if(gameType==gameTypes.global) {
         if(activePlayerColor==color.black&&whiteUsername==myUsername) return
         if(activePlayerColor==color.white&&blackUsername==myUsername) return
       }
@@ -487,19 +508,97 @@ block content
       if(sameLocation(oldLoc, thisLocation)) return
 
       //otherwise, move the selected piece to the new location
-      if(!localPlay) {
+      if(gameType==gameTypes.global) {
         socket.emit('newMove', {
             oldLoc: oldLoc
           , newLoc: thisLocation
         })
       }
       move(oldLoc, thisLocation)     
+
+      if(gameType==gameTypes.computer) takeComputerTurn()
     })
 
     socket.on('newMove', function (data) {
       move(data.oldLoc, data.newLoc)
     })
 
+    //Computer AI Logic
+    var takeComputerTurn = function () {
+      var oldLoc = {}
+        , newLoc = {}
+
+      findBestTurn(oldLoc, newLoc)
+
+      move(oldLoc, newLoc)
+    }
+
+    var findBestTurn = function (oldLoc, newLoc) {
+      var options = getAllValidMoves()
+
+      var bestScore = Number.NEGATIVE_INFINITY
+      var best = []
+      options.forEach(function (option) {
+        if(option.score < bestScore) return
+        if(option.score == bestScore) best.push(option)
+        bestScore = option.score
+        best = [option]
+      })
+      console.log('best: '+JSON.stringify(best))
+      best = best[Math.floor(Math.random()*best.length)]
+
+      oldLoc.row = best.oldLoc.row
+      oldLoc.col = best.oldLoc.col
+
+      newLoc.row = best.newLoc.row
+      newLoc.col = best.newLoc.col
+    }
+
+    var getAllValidMoves = function () {
+      var validMoves = []
+      for(var r=1; r<=8; r++) {
+        for(var c=1; c<=8; c++) {
+          var oldLoc = { row: r, col: c}
+
+          for(var newR=1; newR<=8; newR++) {
+            for(var newC=1; newC<=8; newC++) {
+              if(newR==r&&newC==c) continue
+
+              var newLoc = { row: newR, col: newC }
+
+              if(!validMove(oldLoc, newLoc)) continue
+
+              validMoves.push({
+                  oldLoc: oldLoc
+                , newLoc: newLoc
+                , score: getScore(newLoc)
+              })
+            }
+          }
+        }
+      }
+      return validMoves
+    }
+
+    var pieceValues = {
+        '\u265A': Number.POSITIVE_INFINITY
+      , '\u265B': 9
+      , '\u265C': 5
+      , '\u265D': 3
+      , '\u265E': 3
+      , '\u265F': 1
+    }
+
+    var getScore = function (newLoc) {
+      var piece = getPiece(newLoc)
+      if(!piece) {
+        console.log(JSON.stringify(newLoc)+', '+(1/2-1/8*Math.abs(4.5-newLoc.col) + 1/2-1/8*Math.abs(4.5-newLoc.row)))
+        return 1/2-1/8*Math.abs(4.5-newLoc.col) + 1/2-1/8*Math.abs(4.5-newLoc.row)
+      }
+
+      console.log(JSON.stringify(newLoc)+', '+pieceValues[piece.pieceType])
+      return pieceValues[piece.pieceType]
+    }
 
 
 
