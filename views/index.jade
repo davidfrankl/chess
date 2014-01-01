@@ -61,6 +61,7 @@ block content
       , 'computer': 'computer'
       , 'global': 'global'
     }
+
     var gameType = gameTypes.local
 
     var color = {
@@ -81,10 +82,311 @@ block content
       , white: []
     }
 
+
+    //init dom board
+    ;(function () {
+      for(var r=8; r>0; r--) {
+        var newRow = $(document.createElement('tr')).attr('class', 'board')
+          .append($(document.createElement('td')).attr('class', 'descriptor').append($(document.createTextNode(r))))
+
+        for(var c=0; c<8; c++) {
+          newRow.append($(document.createElement('td')).attr('class', 'board'))
+        }
+        table.append(newRow)
+      }
+
+      var newRow = $(document.createElement('tr')).append($(document.createElement('td')))
+
+      //add column letters at the bottom
+      for(var c=0, letter='a'; c<8; c++, letter=String.fromCharCode(letter.charCodeAt(0)+1)) {
+        newRow.append($(document.createElement('td')).attr('class', 'descriptor').append($(document.createTextNode(letter))))
+      }
+
+      table.append(newRow)
+    })()
+
+
+    //takes a rowNumber and colNumber on the chess grid (not in the dom table)
+    var updateDomCell = function (r, c, piece) {
+
+      var cell = $('table').find('tr').eq(8-r).find('td').eq(c)
+      cell.html('')
+
+      if(piece == null) return
+
+      cell.append($(document.createElement('span')).attr('class', piece.color).append($(document.createTextNode(piece.pieceType))))
+    }
+
+    ///////////////////////////////////////////////////////////////////////
+    //Game Logic
+    function Game (isMaster) {
+      this.isMaster = isMaster
+      console.log('isMaster   ... '+this.isMaster)
+      this.board = []
+      this.activePlayerColor = color.white
+
+      this.hasMoved = {
+        white: {
+            leftRook: false
+          , rightRook: false
+          , king: false
+        },
+        black: {
+            leftRook: false
+          , rightRook: false
+          , king: false
+        }
+      }
+
+      this.initBoard()
+    }
+
+    Game.prototype.initBoard = function () {
+      console.log('now: '+this.isMaster)
+      var row1 = [
+        { color: color.white, pieceType: pieceType.rook },
+        { color: color.white, pieceType: pieceType.knight },
+        { color: color.white, pieceType: pieceType.bishop },
+        { color: color.white, pieceType: pieceType.queen },
+        { color: color.white, pieceType: pieceType.king },
+        { color: color.white, pieceType: pieceType.bishop },
+        { color: color.white, pieceType: pieceType.knight },
+        { color: color.white, pieceType: pieceType.rook }
+      ]
+      this.board.push(row1)
+
+      var row2 = []
+      for(var c=1; c<=8; c++) {
+        row2.push({
+            color: color.white
+          , pieceType: pieceType.pawn
+        })
+      }
+      this.board.push(row2)
+
+      for(var r=3; r<=6; r++) {
+        var rowR = []
+        for(var c=1; c<=8; c++) {
+          rowR.push(null)
+        }
+        this.board.push(rowR)
+      }
+
+      var row7 = []
+      for(var c=1; c<=8; c++) {
+        row7.push({
+            color: color.black
+          , pieceType: pieceType.pawn
+        })
+      }
+      this.board.push(row7)
+
+      var row8 = [
+        { color: color.black, pieceType: pieceType.rook },
+        { color: color.black, pieceType: pieceType.knight },
+        { color: color.black, pieceType: pieceType.bishop },
+        { color: color.black, pieceType: pieceType.queen },
+        { color: color.black, pieceType: pieceType.king },
+        { color: color.black, pieceType: pieceType.bishop },
+        { color: color.black, pieceType: pieceType.knight },
+        { color: color.black, pieceType: pieceType.rook }
+      ]
+      this.board.push(row8)
+
+      if(this.isMaster) {
+        console.log('isMaster')
+        for(var r=1; r<=2; r++) {
+          for(var c=1; c<=8; c++) {
+            updateDomCell(r, c, this.getPiece(r,c))
+          }
+        }
+        for(var r=7; r<=8; r++) {
+          for(var c=1; c<=8; c++) {
+            updateDomCell(r, c, this.getPiece(r,c))
+          }
+        }
+      }
+    }
+
+
+    Game.prototype.getPiece = function (loc, col) {
+      if (arguments.length == 1) return this.board[loc.row-1][loc.col-1]
+      else return this.board[loc-1][col-1]
+    }
+
+    Game.prototype.setPiece = function (loc, piece) {
+      if(piece!=null && this.getPiece(loc)!=null) addToGraveyard(this.getPiece(loc))
+
+      this.board[loc.row-1][loc.col-1] = piece
+
+      if(piece!=null && (loc.row==1||loc.row==8)&&piece.pieceType == pieceType.pawn) piece.pieceType = pieceType.queen
+
+      if(this.isMaster) updateDomCell(loc.row, loc.col, piece)
+    }
+
+    Game.prototype.validMove = function (oldLoc, newLoc) {
+      var myPiece = this.getPiece(oldLoc)
+
+      if(!myPiece) return false
+
+      //players can't move other players piece
+      if(myPiece.color!=this.activePlayerColor) return false
+
+      //players can't capture their own piece
+      if(this.getPiece(newLoc)!=null && this.getPiece(newLoc).color == myPiece.color) return false
+
+      var obj = this
+      //boolean function for rooks and queens moving horizontally
+      var unobstructedHorizontally = function () {
+        var increment = oldLoc.col < newLoc.col? 1: -1
+        for(var c=oldLoc.col+increment; c!=newLoc.col; c+=increment) {
+          if(obj.getPiece({row: oldLoc.row, col: c})!=null) return false
+        }
+        return true
+      }
+      var unobstructedVertically = function () {
+        var increment = oldLoc.row < newLoc.row? 1: -1
+        for(var r=oldLoc.row+increment; r!=newLoc.row; r+=increment) {
+          if(obj.getPiece({row: r, col: oldLoc.col})!=null) return false
+        }
+        return true
+      }
+      var unobstructedDiagonally = function () {
+        var horizontalIncrement = oldLoc.col < newLoc.col? 1: -1
+        var verticalIncrement = oldLoc.row < newLoc.row? 1: -1
+
+        for(var r=oldLoc.row+verticalIncrement, c=oldLoc.col+horizontalIncrement; r!=newLoc.row; r+=verticalIncrement, c+=horizontalIncrement) {
+          if(obj.getPiece({row: r, col: c})!=null) {
+            return false
+          }
+        }
+        return true
+      }
+      var kingUnobstructedLeft = function () {
+        for(var c=4; c>1; c--) {
+          if(obj.getPiece(newLoc.row, c)) return false
+        }
+        return true
+      }
+      var kingUnobstructedRight = function () {
+        for(var c=6; c<8; c++) {
+          if(obj.getPiece(newLoc.row, c)) {
+            return false
+          }
+        }
+        return true
+      }
+
+      if(myPiece.pieceType == pieceType.pawn) {
+        var increment = myPiece.color == 'white' ? 1 : -1
+
+        if(oldLoc.col == newLoc.col) {
+          if(this.getPiece(newLoc)!=null) return false
+
+          var distance = newLoc.row-oldLoc.row
+          if(distance==increment) return true
+          if(distance==increment*2&&((oldLoc.row==2&&myPiece.color == 'white')||(oldLoc.row==7&&myPiece.color == 'black'))&&unobstructedVertically()) return true
+
+          return false
+        } else {
+          if(this.getPiece(newLoc) == null) return false
+          if(this.getPiece(newLoc).color == myPiece.color) return false
+          if(Math.abs(newLoc.col-oldLoc.col)>1) return false
+          if(newLoc.row-oldLoc.row!=increment) return false
+
+          return true
+        }
+      }
+
+      if (myPiece.pieceType == pieceType.rook) {
+        if (oldLoc.row==newLoc.row) return unobstructedHorizontally()
+        if (oldLoc.col==newLoc.col) return unobstructedVertically()
+        return false
+      }
+
+      if (myPiece.pieceType == pieceType.knight) {
+        if(Math.abs(oldLoc.row-newLoc.row)==2 && Math.abs(oldLoc.col-newLoc.col)==1) return true
+        if (Math.abs(oldLoc.row-newLoc.row)==1 && Math.abs(oldLoc.col-newLoc.col)==2) return true
+        return false
+      }
+
+      if (myPiece.pieceType == pieceType.bishop) {
+        if (Math.abs(oldLoc.row-newLoc.row) == Math.abs(oldLoc.col-newLoc.col)) return unobstructedDiagonally()
+        return false        
+      }
+
+      if (myPiece.pieceType == pieceType.queen) {
+        if (oldLoc.row==newLoc.row) return unobstructedHorizontally()
+        if (oldLoc.col==newLoc.col) return unobstructedVertically()
+
+        if (Math.abs(oldLoc.row-newLoc.row) == Math.abs(oldLoc.col-newLoc.col)) return unobstructedDiagonally()
+
+        return false
+      }
+
+      if (myPiece.pieceType == pieceType.king) {
+        //only move 1 in either direction
+        if (Math.abs(oldLoc.row-newLoc.row)<2 && Math.abs(oldLoc.col-newLoc.col)<2) return true
+
+        //not a castle
+        if(oldLoc.row!=newLoc.row) return false
+
+        //if the king already moved, cant castle
+        if(storedMoves[myPiece.color]['king']) return false
+
+        if(oldLoc.col-newLoc.col==2&&kingUnobstructedLeft()&&!storedMoves[myPiece.color]['leftRook']) {
+          storedMoves[myPiece.color]['leftRook'] = true
+          storedMoves[myPiece.color]['king'] = true
+          castleRook(newLoc)
+          return true
+        }        
+
+        if(oldLoc.col-newLoc.col==-2&&kingUnobstructedRight()&&!storedMoves[myPiece.color]['rightRook']) {
+          storedMoves[myPiece.color]['rightRook'] = true
+          storedMoves[myPiece.color]['king'] = true
+          castleRook(newLoc)
+          return true
+        }
+
+        return false
+      }
+
+      return true
+    }
+
+    Game.prototype.move = function (oldLoc, newLoc) {
+      if(!this.validMove(oldLoc, newLoc)) return
+      var oldPiece = this.getPiece(oldLoc)
+      this.setPiece(newLoc, oldPiece)
+      this.setPiece(oldLoc, null)
+
+      this.changeActivePlayer()
+    }
+
+    Game.prototype.castleRook = function (kingLoc) {
+      var row = kingLoc.row
+      var oldCol = kingLoc.col > 5? 8 : 1
+      var newCol = kingLoc.col > 5? kingLoc.col-1 : kingLoc.col+1
+      this.move({ row: row, col: oldCol }, { row: row, col: newCol })
+      this.changeActivePlayer()
+    }
+
+    Game.prototype.changeActivePlayer = function () {
+      this.activePlayerColor = this.activePlayerColor==color.white? color.black : color.white 
+
+      $('.currentPlayerIndicator').addClass('hidden')
+      var elem =  this.activePlayerColor==color.white? $('#white') : $('#black')
+
+      elem.find('.currentPlayerIndicator').removeClass('hidden')
+    }
+
+    var game = new Game(true)
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //DOM stuff
+
     //selected piece must set row first, then col, or compare wont work
     var selectedLocation = null
-      , boardRepresentation = []
-      , activePlayerColor = color.white
 
     var sortGraveyardPieces = function (color) {
       graveyardPieces[color].sort(function (a, b) {
@@ -189,287 +491,6 @@ block content
       $('.fadedOverlay').hide()
     })
 
-    //init dom board
-    ;(function () {
-      for(var r=8; r>0; r--) {
-        var newRow = $(document.createElement('tr')).attr('class', 'board')
-          .append($(document.createElement('td')).attr('class', 'descriptor').append($(document.createTextNode(r))))
-
-        for(var c=0; c<8; c++) {
-          newRow.append($(document.createElement('td')).attr('class', 'board'))
-        }
-        table.append(newRow)
-      }
-
-      var newRow = $(document.createElement('tr')).append($(document.createElement('td')))
-
-      //add column letters at the bottom
-      for(var c=0, letter='a'; c<8; c++, letter=String.fromCharCode(letter.charCodeAt(0)+1)) {
-        newRow.append($(document.createElement('td')).attr('class', 'descriptor').append($(document.createTextNode(letter))))
-      }
-
-      table.append(newRow)
-    })()
-
-    //takes a rowNumber and colNumber on the chess grid (not in the dom table)
-    var updateDomCell = function (r, c) {
-      var piece = boardRepresentation[r-1][c-1]
-
-      var cell = $('table').find('tr').eq(8-r).find('td').eq(c)
-      cell.html('')
-
-      if(piece == null) return
-
-      cell.append($(document.createElement('span')).attr('class', piece.color).append($(document.createTextNode(piece.pieceType))))
-    }
-
-    //init board configuration
-    ;(function () {
-      var row1 = [
-        { color: color.white, pieceType: pieceType.rook },
-        { color: color.white, pieceType: pieceType.knight },
-        { color: color.white, pieceType: pieceType.bishop },
-        { color: color.white, pieceType: pieceType.queen },
-        { color: color.white, pieceType: pieceType.king },
-        { color: color.white, pieceType: pieceType.bishop },
-        { color: color.white, pieceType: pieceType.knight },
-        { color: color.white, pieceType: pieceType.rook }
-      ]
-      boardRepresentation.push(row1)
-
-      var row2 = []
-      for(var c=1; c<=8; c++) {
-        row2.push({
-            color: color.white
-          , pieceType: pieceType.pawn
-        })
-      }
-      boardRepresentation.push(row2)
-
-      for(var r=1; r<=2; r++) {
-        for(var c=1; c<=8; c++) {
-          updateDomCell(r, c)
-        }
-      }
-
-      for(var r=3; r<=6; r++) {
-        var rowR = []
-        for(var c=1; c<=8; c++) {
-          rowR.push(null)
-        }
-        boardRepresentation.push(rowR)
-      }
-
-      var row7 = []
-      for(var c=1; c<=8; c++) {
-        row7.push({
-            color: color.black
-          , pieceType: pieceType.pawn
-        })
-      }
-      boardRepresentation.push(row7)
-
-      var row8 = [
-        { color: color.black, pieceType: pieceType.rook },
-        { color: color.black, pieceType: pieceType.knight },
-        { color: color.black, pieceType: pieceType.bishop },
-        { color: color.black, pieceType: pieceType.queen },
-        { color: color.black, pieceType: pieceType.king },
-        { color: color.black, pieceType: pieceType.bishop },
-        { color: color.black, pieceType: pieceType.knight },
-        { color: color.black, pieceType: pieceType.rook }
-      ]
-      boardRepresentation.push(row8)
-
-      for(var r=7; r<=8; r++) {
-        for(var c=1; c<=8; c++) {
-          updateDomCell(r, c)
-        }
-      }
-    })()
-
-    var getPiece = function (loc, col) {
-      if (arguments.length == 1) return boardRepresentation[loc.row-1][loc.col-1]
-      else return boardRepresentation[loc-1][col-1]
-    }
-
-    var setPiece = function (loc, piece) {
-      if(piece!=null && getPiece(loc)!=null) addToGraveyard(getPiece(loc))
-
-      boardRepresentation[loc.row-1][loc.col-1] = piece
-
-      if(piece!=null && (loc.row==1||loc.row==8)&&piece.pieceType == pieceType.pawn) piece.pieceType = pieceType.queen
-
-      updateDomCell(loc.row, loc.col)
-    }
-
-    var storedMoves = {
-      white: {
-          leftRook: false
-        , rightRook: false
-        , king: false
-      },
-      black: {
-          leftRook: false
-        , rightRook: false
-        , king: false
-      }
-    }
-    var validMove = function (oldLoc, newLoc) {
-      var myPiece = getPiece(oldLoc)
-
-      if(!myPiece) return false
-
-      //players can't move other players piece
-      if(myPiece.color!=activePlayerColor) return false
-
-      //players can't capture their own piece
-      if(getPiece(newLoc)!=null && getPiece(newLoc).color == myPiece.color) return false
-
-      //boolean function for rooks and queens moving horizontally
-      var unobstructedHorizontally = function () {
-        var increment = oldLoc.col < newLoc.col? 1: -1
-        for(var c=oldLoc.col+increment; c!=newLoc.col; c+=increment) {
-          if(getPiece({row: oldLoc.row, col: c})!=null) return false
-        }
-        return true
-      }
-      var unobstructedVertically = function () {
-        var increment = oldLoc.row < newLoc.row? 1: -1
-        for(var r=oldLoc.row+increment; r!=newLoc.row; r+=increment) {
-          if(getPiece({row: r, col: oldLoc.col})!=null) return false
-        }
-        return true
-      }
-      var unobstructedDiagonally = function () {
-        var horizontalIncrement = oldLoc.col < newLoc.col? 1: -1
-        var verticalIncrement = oldLoc.row < newLoc.row? 1: -1
-
-        for(var r=oldLoc.row+verticalIncrement, c=oldLoc.col+horizontalIncrement; r!=newLoc.row; r+=verticalIncrement, c+=horizontalIncrement) {
-          if(getPiece({row: r, col: c})!=null) {
-            return false
-          }
-        }
-        return true
-      }
-      var kingUnobstructedLeft = function () {
-        for(var c=4; c>1; c--) {
-          if(getPiece(newLoc.row, c)) return false
-        }
-        return true
-      }
-      var kingUnobstructedRight = function () {
-        for(var c=6; c<8; c++) {
-          if(getPiece(newLoc.row, c)) {
-            return false
-          }
-        }
-        return true
-      }
-
-      if(myPiece.pieceType == pieceType.pawn) {
-        var increment = myPiece.color == 'white' ? 1 : -1
-
-        if(oldLoc.col == newLoc.col) {
-          if(getPiece(newLoc)!=null) return false
-
-          var distance = newLoc.row-oldLoc.row
-          if(distance==increment) return true
-          if(distance==increment*2&&((oldLoc.row==2&&myPiece.color == 'white')||(oldLoc.row==7&&myPiece.color == 'black'))&&unobstructedVertically()) return true
-
-          return false
-        } else {
-          if(getPiece(newLoc) == null) return false
-          if(getPiece(newLoc).color == myPiece.color) return false
-          if(Math.abs(newLoc.col-oldLoc.col)>1) return false
-          if(newLoc.row-oldLoc.row!=increment) return false
-
-          return true
-        }
-      }
-
-      if (myPiece.pieceType == pieceType.rook) {
-        if (oldLoc.row==newLoc.row) return unobstructedHorizontally()
-        if (oldLoc.col==newLoc.col) return unobstructedVertically()
-        return false
-      }
-
-      if (myPiece.pieceType == pieceType.knight) {
-        if(Math.abs(oldLoc.row-newLoc.row)==2 && Math.abs(oldLoc.col-newLoc.col)==1) return true
-        if (Math.abs(oldLoc.row-newLoc.row)==1 && Math.abs(oldLoc.col-newLoc.col)==2) return true
-        return false
-      }
-
-      if (myPiece.pieceType == pieceType.bishop) {
-        if (Math.abs(oldLoc.row-newLoc.row) == Math.abs(oldLoc.col-newLoc.col)) return unobstructedDiagonally()
-        return false        
-      }
-
-      if (myPiece.pieceType == pieceType.queen) {
-        if (oldLoc.row==newLoc.row) return unobstructedHorizontally()
-        if (oldLoc.col==newLoc.col) return unobstructedVertically()
-
-        if (Math.abs(oldLoc.row-newLoc.row) == Math.abs(oldLoc.col-newLoc.col)) return unobstructedDiagonally()
-
-        return false
-      }
-
-      if (myPiece.pieceType == pieceType.king) {
-        //only move 1 in either direction
-        if (Math.abs(oldLoc.row-newLoc.row)<2 && Math.abs(oldLoc.col-newLoc.col)<2) return true
-
-        //not a castle
-        if(oldLoc.row!=newLoc.row) return false
-
-        //if the king already moved, cant castle
-        if(storedMoves[myPiece.color]['king']) return false
-
-        if(oldLoc.col-newLoc.col==2&&kingUnobstructedLeft()&&!storedMoves[myPiece.color]['leftRook']) {
-          storedMoves[myPiece.color]['leftRook'] = true
-          storedMoves[myPiece.color]['king'] = true
-          castleRook(newLoc)
-          return true
-        }        
-
-        if(oldLoc.col-newLoc.col==-2&&kingUnobstructedRight()&&!storedMoves[myPiece.color]['rightRook']) {
-          storedMoves[myPiece.color]['rightRook'] = true
-          storedMoves[myPiece.color]['king'] = true
-          castleRook(newLoc)
-          return true
-        }
-
-        return false
-      }
-
-      return true
-    }
-
-    var castleRook = function (kingLoc) {
-      var row = kingLoc.row
-      var oldCol = kingLoc.col > 5? 8 : 1
-      var newCol = kingLoc.col > 5? kingLoc.col-1 : kingLoc.col+1
-      move({ row: row, col: oldCol }, { row: row, col: newCol })
-      changeActivePlayer()
-    }
-
-    var changeActivePlayer = function () {
-      activePlayerColor = activePlayerColor==color.white? color.black : color.white 
-
-      $('.currentPlayerIndicator').addClass('hidden')
-      var elem =  activePlayerColor==color.white? $('#white') : $('#black')
-
-      elem.find('.currentPlayerIndicator').removeClass('hidden')
-    }
-
-    var move = function (oldLoc, newLoc) {
-      if(!validMove(oldLoc, newLoc)) return
-      var oldPiece = getPiece(oldLoc)
-      setPiece(newLoc, oldPiece)
-      setPiece(oldLoc, null)
-
-      changeActivePlayer()
-    }
-
     var getBoardLocation = function(jQueryElem) {
       return {
           row: 8-jQueryElem.parent().index()
@@ -483,8 +504,8 @@ block content
 
     $('td.board').click(function () {
       if(gameType==gameTypes.global) {
-        if(activePlayerColor==color.black&&whiteUsername==myUsername) return
-        if(activePlayerColor==color.white&&blackUsername==myUsername) return
+        if(game.activePlayerColor==color.black&&whiteUsername==myUsername) return
+        if(game.activePlayerColor==color.white&&blackUsername==myUsername) return
       }
 
       $('.clicked').removeClass('clicked')
@@ -494,7 +515,7 @@ block content
       //if there is no previously select location, select this one
       if(selectedLocation == null) {
         if(!$(this).find('.black, .white').length) return
-        if(getPiece(thisLocation).color!=activePlayerColor) return
+        if(game.getPiece(thisLocation).color!=game.activePlayerColor) return
 
         selectedLocation = thisLocation
         $(this).addClass('clicked')
@@ -514,15 +535,16 @@ block content
           , newLoc: thisLocation
         })
       }
-      move(oldLoc, thisLocation)     
+      game.move(oldLoc, thisLocation)     
 
       if(gameType==gameTypes.computer) takeComputerTurn()
     })
 
     socket.on('newMove', function (data) {
-      move(data.oldLoc, data.newLoc)
+      game.move(data.oldLoc, data.newLoc)
     })
 
+    /////////////////////////////////////////////////////////////////////////////////////////////
     //Computer AI Logic
     var takeComputerTurn = function () {
       var oldLoc = {}
@@ -590,7 +612,7 @@ block content
     }
 
     var getScore = function (newLoc) {
-      var piece = getPiece(newLoc)
+      var piece = this.getPiece(newLoc)
       if(!piece) {
         console.log(JSON.stringify(newLoc)+', '+(1/2-1/8*Math.abs(4.5-newLoc.col) + 1/2-1/8*Math.abs(4.5-newLoc.row)))
         return 1/2-1/8*Math.abs(4.5-newLoc.col) + 1/2-1/8*Math.abs(4.5-newLoc.row)
