@@ -65,6 +65,12 @@ block content
         black: []
       , white: []
     }
+
+    //selected piece must set row first, then col, or compare wont work
+    var selectedLocation = null
+      , boardRepresentation = []
+      , activePlayerColor = color.white
+
     var sortGraveyardPieces = function (color) {
       graveyardPieces[color].sort(function (a, b) {
         var pieces = Object.keys(pieceType).map(function (p) { return pieceType[p] })
@@ -156,11 +162,6 @@ block content
       startGame(data)
       $('.fadedOverlay').hide()
     })
-
-    //selected piece must set row first, then col, or compare wont work
-    var selectedLocation = null
-      , boardRepresentation = []
-      , activePlayerColor = color.white
 
     //init dom board
     ;(function () {
@@ -261,8 +262,9 @@ block content
       }
     })()
 
-    var getPiece = function (loc) {
-      return boardRepresentation[loc.row-1][loc.col-1]
+    var getPiece = function (loc, col) {
+      if (arguments.length == 1) return boardRepresentation[loc.row-1][loc.col-1]
+      else return boardRepresentation[loc-1][col-1]
     }
 
     var setPiece = function (loc, piece) {
@@ -275,6 +277,18 @@ block content
       updateDomCell(loc.row, loc.col)
     }
 
+    var storedMoves = {
+      white: {
+          leftRook: false
+        , rightRook: false
+        , king: false
+      },
+      black: {
+          leftRook: false
+        , rightRook: false
+        , king: false
+      }
+    }
     var validMove = function (oldLoc, newLoc) {
       var myPiece = getPiece(oldLoc)
 
@@ -309,6 +323,22 @@ block content
             return false
           }
         }
+        return true
+      }
+      var kingUnobstructedLeft = function () {
+        for(var c=4; c>1; c--) {
+          if(getPiece(newLoc.row, c)) return false
+        }
+        return true
+      }
+      var kingUnobstructedRight = function () {
+        for(var c=6; c<8; c++) {
+          if(getPiece(newLoc.row, c)) {
+            console.log(getPiece(newLoc.row, c))
+            return false
+          }
+        }
+        console.log('truth')
         return true
       }
 
@@ -360,11 +390,43 @@ block content
       }
 
       if (myPiece.pieceType == pieceType.king) {
-        if (Math.abs(oldLoc.row-newLoc.row)>1 || Math.abs(oldLoc.col-newLoc.col)>1) return false
-        return true
+        //only move 1 in either direction
+        if (Math.abs(oldLoc.row-newLoc.row)<2 && Math.abs(oldLoc.col-newLoc.col)<2) return true
+
+        //not a castle
+        if(oldLoc.row!=newLoc.row) return false
+
+        //if the king already moved, cant castle
+        if(storedMoves[myPiece.color]['king']) return false
+
+        if(oldLoc.col-newLoc.col==2&&kingUnobstructedLeft()&&!storedMoves[myPiece.color]['leftRook']) {
+          storedMoves[myPiece.color]['leftRook'] = true
+          storedMoves[myPiece.color]['king'] = true
+          castleRook(newLoc)
+          return true
+        }        
+        console.log('here')
+
+        if(oldLoc.col-newLoc.col==-2&&kingUnobstructedRight()&&!storedMoves[myPiece.color]['rightRook']) {
+          storedMoves[myPiece.color]['rightRook'] = true
+          storedMoves[myPiece.color]['king'] = true
+          castleRook(newLoc)
+          return true
+        }
+        console.log('here')
+
+        return false
       }
 
       return true
+    }
+
+    var castleRook = function (kingLoc) {
+      var row = kingLoc.row
+      var oldCol = kingLoc.col > 5? 8 : 1
+      var newCol = kingLoc.col > 5? kingLoc.col-1 : kingLoc.col+1
+      move({ row: row, col: oldCol }, { row: row, col: newCol })
+      changeActivePlayer()
     }
 
     var changeActivePlayer = function () {
