@@ -121,7 +121,6 @@ block content
     //Game Logic
     function Game (isMaster) {
       this.isMaster = isMaster
-      console.log('isMaster   ... '+this.isMaster)
       this.board = []
       this.activePlayerColor = color.white
 
@@ -142,7 +141,6 @@ block content
     }
 
     Game.prototype.initBoard = function () {
-      console.log('now: '+this.isMaster)
       var row1 = [
         { color: color.white, pieceType: pieceType.rook },
         { color: color.white, pieceType: pieceType.knight },
@@ -215,7 +213,7 @@ block content
     }
 
     Game.prototype.setPiece = function (loc, piece) {
-      if(piece!=null && this.getPiece(loc)!=null) addToGraveyard(this.getPiece(loc))
+      if(this.isMaster && piece!=null && this.getPiece(loc)!=null) addToGraveyard(this.getPiece(loc))
 
       this.board[loc.row-1][loc.col-1] = piece
 
@@ -332,19 +330,19 @@ block content
         if(oldLoc.row!=newLoc.row) return false
 
         //if the king already moved, cant castle
-        if(storedMoves[myPiece.color]['king']) return false
+        if(this.hasMoved[myPiece.color]['king']) return false
 
-        if(oldLoc.col-newLoc.col==2&&kingUnobstructedLeft()&&!storedMoves[myPiece.color]['leftRook']) {
-          storedMoves[myPiece.color]['leftRook'] = true
-          storedMoves[myPiece.color]['king'] = true
-          castleRook(newLoc)
+        if(oldLoc.col-newLoc.col==2&&kingUnobstructedLeft()&&!this.hasMoved[myPiece.color]['leftRook']) {
+          this.hasMoved[myPiece.color]['leftRook'] = true
+          this.hasMoved[myPiece.color]['king'] = true
+          this.castleRook(newLoc)
           return true
         }        
 
-        if(oldLoc.col-newLoc.col==-2&&kingUnobstructedRight()&&!storedMoves[myPiece.color]['rightRook']) {
-          storedMoves[myPiece.color]['rightRook'] = true
-          storedMoves[myPiece.color]['king'] = true
-          castleRook(newLoc)
+        if(oldLoc.col-newLoc.col==-2&&kingUnobstructedRight()&&!this.hasMoved[myPiece.color]['rightRook']) {
+          this.hasMoved[myPiece.color]['rightRook'] = true
+          this.hasMoved[myPiece.color]['king'] = true
+          this.castleRook(newLoc)
           return true
         }
 
@@ -410,9 +408,7 @@ block content
       var infobox = piece.color==color.black? $('#black') : $('#white')
 
       graveyardPieces[piece.color].push(piece)
-      console.log('graveyardPieces: '+JSON.stringify(graveyardPieces[piece.color]))
       sortGraveyardPieces(piece.color)
-      console.log('graveyardPieces: '+JSON.stringify(graveyardPieces[piece.color]))
 
       displayGraveyardPieces(piece.color)
     }
@@ -550,13 +546,13 @@ block content
       var oldLoc = {}
         , newLoc = {}
 
-      findBestTurn(oldLoc, newLoc)
+      findBestTurn(oldLoc, newLoc, 2, game)
 
-      move(oldLoc, newLoc)
+      game.move(oldLoc, newLoc)
     }
 
-    var findBestTurn = function (oldLoc, newLoc) {
-      var options = getAllValidMoves()
+    var findBestTurn = function (oldLoc, newLoc, plies, game) {
+      var options = getAllMovesAndScores(plies, game)
 
       var bestScore = Number.NEGATIVE_INFINITY
       var best = []
@@ -574,9 +570,11 @@ block content
 
       newLoc.row = best.newLoc.row
       newLoc.col = best.newLoc.col
+
+      return bestScore
     }
 
-    var getAllValidMoves = function () {
+    var getAllMovesAndScores = function (plies, game) {
       var validMoves = []
       for(var r=1; r<=8; r++) {
         for(var c=1; c<=8; c++) {
@@ -588,12 +586,12 @@ block content
 
               var newLoc = { row: newR, col: newC }
 
-              if(!validMove(oldLoc, newLoc)) continue
+              if(!game.validMove(oldLoc, newLoc)) continue
 
               validMoves.push({
                   oldLoc: oldLoc
                 , newLoc: newLoc
-                , score: getScore(newLoc)
+                , score: getScore(plies, game, oldLoc, newLoc)
               })
             }
           }
@@ -611,15 +609,20 @@ block content
       , '\u265F': 1
     }
 
-    var getScore = function (newLoc) {
-      var piece = this.getPiece(newLoc)
-      if(!piece) {
-        console.log(JSON.stringify(newLoc)+', '+(1/2-1/8*Math.abs(4.5-newLoc.col) + 1/2-1/8*Math.abs(4.5-newLoc.row)))
-        return 1/2-1/8*Math.abs(4.5-newLoc.col) + 1/2-1/8*Math.abs(4.5-newLoc.row)
-      }
+    var getScore = function (plies, game, oldLoc, newLoc) {
+      if(plies==0) return 0
 
-      console.log(JSON.stringify(newLoc)+', '+pieceValues[piece.pieceType])
-      return pieceValues[piece.pieceType]
+      var newGame = jQuery.extend(true, {}, game);
+      newGame.isMaster = false
+      newGame.move(oldLoc, newLoc)
+
+
+      var piece = game.getPiece(newLoc)
+      var score
+      if(!piece) score = 1/2-1/8*Math.abs(4.5-newLoc.col) + 1/2-1/8*Math.abs(4.5-newLoc.row)
+      else score = pieceValues[piece.pieceType]
+
+      return score - findBestTurn({}, {}, plies-1, newGame)
     }
 
 
