@@ -10,10 +10,14 @@ block content
       div.infobox#black
         h3
           span &#x25A0;
+          span.username
+          span.hidden.currentPlayerIndicator (Up Now)
         ul
       div.infobox#white
         h3
           span &#x25A0;
+          span.username
+          span.currentPlayerIndicator (Up Now)
         ul
   div.fadedOverlay
     div#menu
@@ -71,6 +75,8 @@ block content
       , boardRepresentation = []
       , activePlayerColor = color.white
 
+    var localPlay = true
+
     var sortGraveyardPieces = function (color) {
       graveyardPieces[color].sort(function (a, b) {
         var pieces = Object.keys(pieceType).map(function (p) { return pieceType[p] })
@@ -106,8 +112,13 @@ block content
         case 1:
           if($('[name="gameType"]:checked').attr('value')=='localPlay') {
             $('.fadedOverlay').hide()
+            startGame({
+                blackUsername: 'Player 2'
+              , whiteUsername: 'Player 1'
+            })
             return
           }
+          localPlay = false
           $('#gameTypeRadioGroup').hide()
           $('#createUsername').removeClass('hidden').find('input').focus()
           $('#header').text('Choose a username:')
@@ -149,12 +160,8 @@ block content
       blackUsername = data.blackUsername
       whiteUsername = data.whiteUsername
 
-      $('#black h3')
-        .append($(document.createTextNode(' '+blackUsername)))
-        .append($(document.createElement('span')).text('(Up Now)').addClass('hidden').addClass('currentPlayerIndicator'))
-      $('#white h3')
-        .append($(document.createTextNode(' '+whiteUsername)))
-        .append($(document.createElement('span')).text('(Up Now)').addClass('currentPlayerIndicator'))
+      $('#black h3 .username').text(blackUsername)
+      $('#white h3 .username').text(whiteUsername)
     }
 
     socket.on('startGame', function (data) {
@@ -319,7 +326,6 @@ block content
 
         for(var r=oldLoc.row+verticalIncrement, c=oldLoc.col+horizontalIncrement; r!=newLoc.row; r+=verticalIncrement, c+=horizontalIncrement) {
           if(getPiece({row: r, col: c})!=null) {
-            console.log(JSON.stringify({row: r, col: c}))
             return false
           }
         }
@@ -334,11 +340,9 @@ block content
       var kingUnobstructedRight = function () {
         for(var c=6; c<8; c++) {
           if(getPiece(newLoc.row, c)) {
-            console.log(getPiece(newLoc.row, c))
             return false
           }
         }
-        console.log('truth')
         return true
       }
 
@@ -405,7 +409,6 @@ block content
           castleRook(newLoc)
           return true
         }        
-        console.log('here')
 
         if(oldLoc.col-newLoc.col==-2&&kingUnobstructedRight()&&!storedMoves[myPiece.color]['rightRook']) {
           storedMoves[myPiece.color]['rightRook'] = true
@@ -413,7 +416,6 @@ block content
           castleRook(newLoc)
           return true
         }
-        console.log('here')
 
         return false
       }
@@ -459,8 +461,10 @@ block content
     }
 
     $('td.board').click(function () {
-      if(activePlayerColor==color.black&&whiteUsername==myUsername) return
-      if(activePlayerColor==color.white&&blackUsername==myUsername) return
+      if(!localPlay) {
+        if(activePlayerColor==color.black&&whiteUsername==myUsername) return
+        if(activePlayerColor==color.white&&blackUsername==myUsername) return
+      }
 
       $('.clicked').removeClass('clicked')
 
@@ -483,10 +487,12 @@ block content
       if(sameLocation(oldLoc, thisLocation)) return
 
       //otherwise, move the selected piece to the new location
-      socket.emit('newMove', {
-          oldLoc: oldLoc
-        , newLoc: thisLocation
-      })
+      if(!localPlay) {
+        socket.emit('newMove', {
+            oldLoc: oldLoc
+          , newLoc: thisLocation
+        })
+      }
       move(oldLoc, thisLocation)     
     })
 

@@ -63,6 +63,9 @@ body .infobox#white span:nth-of-type(1) {
 body .infobox#white li {
   color: #fff;
 }
+body .infobox .username {
+  margin-left: 20px;
+}
 body .infobox .currentPlayerIndicator {
   font-size: 20px;
   margin-left: 20px;
