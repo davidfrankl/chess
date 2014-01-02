@@ -192,7 +192,6 @@ block content
       this.board.push(row8)
 
       if(this.isMaster) {
-        console.log('isMaster')
         for(var r=1; r<=2; r++) {
           for(var c=1; c<=8; c++) {
             updateDomCell(r, c, this.getPiece(r,c))
@@ -533,7 +532,7 @@ block content
       }
       game.move(oldLoc, thisLocation)     
 
-      if(gameType==gameTypes.computer) takeComputerTurn()
+      if(gameType==gameTypes.computer) setTimeout(takeComputerTurn, 0)
     })
 
     socket.on('newMove', function (data) {
@@ -552,6 +551,7 @@ block content
     }
 
     var findBestTurn = function (oldLoc, newLoc, plies, game) {
+      console.log('findBestTurn '+plies)
       var options = getAllMovesAndScores(plies, game)
 
       var bestScore = Number.NEGATIVE_INFINITY
@@ -562,7 +562,6 @@ block content
         bestScore = option.score
         best = [option]
       })
-      console.log('best: '+JSON.stringify(best))
       best = best[Math.floor(Math.random()*best.length)]
 
       oldLoc.row = best.oldLoc.row
@@ -610,8 +609,6 @@ block content
     }
 
     var getScore = function (plies, game, oldLoc, newLoc) {
-      if(plies==0) return 0
-
       var newGame = jQuery.extend(true, {}, game);
       newGame.isMaster = false
       newGame.move(oldLoc, newLoc)
@@ -622,7 +619,8 @@ block content
       if(!piece) score = 1/2-1/8*Math.abs(4.5-newLoc.col) + 1/2-1/8*Math.abs(4.5-newLoc.row)
       else score = pieceValues[piece.pieceType]
 
-      return score - findBestTurn({}, {}, plies-1, newGame)
+      if(plies==1) return score
+      else return score - findBestTurn({}, {}, plies-1, newGame)
     }
 
 
