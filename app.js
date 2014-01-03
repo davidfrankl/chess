@@ -31,6 +31,13 @@ app.get('/', function (req, res) {
   res.render('index')
 })
 
+app.get('/chess', function (req, res) {
+  res.render('chess')
+})
+app.get('/minesweeper', function (req, res) {
+  res.render('minesweeper')
+})
+
 var addAvailablePlayer = function (username, next) {
   new AvailablePlayer({
     username: username

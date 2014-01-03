@@ -1,0 +1,100 @@
+body {
+  background-color: #bdbdbd;
+}
+.contentBox {
+  background-color: #bdbdbd;
+  width: 175px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: #fff #7b7b7b #7b7b7b #fff;
+}
+.contentBox .heading {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #7b7b7b #fff #fff #7b7b7b;
+  margin: 7px;
+}
+.contentBox .heading * {
+  display: inline;
+}
+.contentBox .heading img {
+  margin: 0;
+}
+.contentBox .heading .minesLeft {
+  float: left;
+}
+.contentBox .heading .restartButton {
+  margin-left: 20px;
+}
+.contentBox .heading .timer {
+  float: right;
+}
+.contentBox table {
+  border-collapse: separate;
+  border-width: 2px;
+  border-style: solid;
+  border-color: #7b7b7b #fff #fff #7b7b7b;
+  margin: 7px;
+}
+.contentBox table td {
+  width: 20px;
+  height: 20px;
+}
+.contentBox table td.notclicked {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #fff #7b7b7b #7b7b7b #fff;
+}
+.contentBox table td.clicked {
+  border-width: 1px;
+  border-style: solid;
+  border-color: #7b7b7b;
+}
+.contentBox table td.bombdead {
+  background-image: url("http://www.freeminesweeper.org/images/bombdeath.gif");
+  background-size: 100%;
+}
+.contentBox table td.bomb {
+  background-image: url("http://www.freeminesweeper.org/images/bombrevealed.gif");
+  background-size: 100%;
+}
+.contentBox table td.one {
+  background-image: url("http://www.freeminesweeper.org/images/open1.gif");
+  background-size: 100%;
+}
+.contentBox table td.two {
+  background-image: url("http://www.freeminesweeper.org/images/open2.gif");
+  background-size: 100%;
+}
+.contentBox table td.three {
+  background-image: url("http://www.freeminesweeper.org/images/open3.gif");
+  background-size: 100%;
+}
+.contentBox table td.four {
+  background-image: url("http://www.freeminesweeper.org/images/open4.gif");
+  background-size: 100%;
+}
+.contentBox table td.five {
+  background-image: url("http://www.freeminesweeper.org/images/open5.gif");
+  background-size: 100%;
+}
+.contentBox table td.six {
+  background-image: url("http://www.freeminesweeper.org/images/open6.gif");
+  background-size: 100%;
+}
+.contentBox table td.seven {
+  background-image: url("http://www.freeminesweeper.org/images/open7.gif");
+  background-size: 100%;
+}
+.contentBox table td.eight {
+  background-image: url("http://www.freeminesweeper.org/images/open8.gif");
+  background-size: 100%;
+}
+.contentBox table td.nine {
+  background-image: url("http://www.freeminesweeper.org/images/open9.gif");
+  background-size: 100%;
+}
+.contentBox table td.flagged {
+  background-image: url("http://www.freeminesweeper.org/images/bombflagged.gif");
+  background-size: 100%;
+}

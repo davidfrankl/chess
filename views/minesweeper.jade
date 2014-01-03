@@ -1,0 +1,142 @@
+extend layout
+
+block links
+  link(rel='stylesheet', href='/stylesheets/minesweeper.css')
+
+block content
+  div.contentBox
+    div.heading
+      div.minesLeft
+        <img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt=""><img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt=""><img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt="">
+      div.restartButton
+        <img src="http://www.freeminesweeper.org/images/facesmile.gif" name="face" hspace="12" border="0" width="26" height="26" alt="">
+      div.timer
+        <img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt=""><img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt=""><img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt="">
+    div.board
+      table
+  script.
+    var board = []
+    var lost = false
+
+    var restartGame = function () {
+      board = []
+      lost = false
+
+      var numBombsLeft = 10
+      var numCellsLeft = 64
+      for(var r=1; r<=8; r++) {
+        var row = []
+        for(var c=1; c<=8; c++) {
+          var isBomb = false
+          if(Math.floor(Math.random()*numCellsLeft)<numBombsLeft) {
+            numBombsLeft--
+            row.push(1)
+          } else {
+            row.push(0)
+          }
+          numCellsLeft--
+        }
+        board.push(row)
+      }
+
+      $('td').each(function () {
+        $(this).removeClass('clicked').removeClass('bomb').removeClass('flagged').removeClass('bombdead').addClass('notclicked')
+        .removeClass('one').removeClass('two').removeClass('three').removeClass('four').removeClass('five').removeClass('six').removeClass('seven').removeClass('eight').removeClass('nine')
+      })
+    }
+    restartGame()
+
+    var colorAllBombs = function () {
+      for(var r=1; r<=8; r++) {
+        for(var c=1; c<=8; c++) {
+          if(!board[r-1][c-1]) continue
+
+          console.log(r, c)
+          var elem = $('[row="'+r+'"][col="'+c+'"]')
+          if(!elem.hasClass('bombdead')&&!elem.hasClass('flagged')) elem.addClass('bomb')
+        }
+      }
+    }
+
+    var getNumber = function (row, col) {
+      row = Number(row), col=Number(col)
+      var numNeighbors = 0
+      for(var r=row-2; r<row+1; r++) {
+        for(var c=col-2; c<col+1; c++) {
+          if(r>=0&&c>=0&&r<8&&c<8&&(r!=row-1||c!=col-1)&&board[r][c]) numNeighbors++
+        }
+      }
+      return numNeighbors
+    }
+
+    var numberToString = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+    var setNumber = function (r, c) {
+      r = Number(r), c=Number(c)
+
+      if(r<1||r>8||c<1||c>8) return
+      console.log('setNumber: '+r,c)
+
+      var num = getNumber(r, c)
+      var elem = $('[row="'+r+'"][col="'+c+'"]')
+      if(elem.hasClass('clicked')) return
+      elem.addClass(numberToString[num])
+      elem.addClass('clicked')
+
+      if(num==0) {
+        setNumber(r-1, c-1)
+        setNumber(r-1, c)
+        setNumber(r-1, c+1)
+        setNumber(r, c-1)
+        setNumber(r, c+1)
+        setNumber(r+1, c-1)
+        setNumber(r+1, c)
+        setNumber(r+1, c+1)
+      }
+    }
+
+    var click = function (elem) {
+      elem.removeClass('notclicked')
+
+      var r = elem.attr('row')
+        , c = elem.attr('col')
+
+      if(board[r-1][c-1]) {
+        lost = true
+        elem.addClass('bombdead')
+        colorAllBombs()
+      } else {
+        setNumber(r, c)
+      }
+    }
+
+    var flag = function (elem) {
+      console.log('flag')
+      elem.removeClass('notclicked')
+      elem.addClass('flagged')
+      console.log('hasClass notclicked? '+elem.hasClass('notclicked'))
+    }
+
+    for(var r=1; r<=8; r++) {
+      var row = $(document.createElement('tr'))
+      for(var c=1; c<=8; c++) {
+        row.append($(document.createElement('td')).addClass('notclicked').attr('row', ''+r).attr('col', ''+c))
+      }
+      $('table').append(row)
+    }
+
+    $('.notclicked').mousedown(function (e) {
+      if($(this).hasClass('flagged')&&e.ctrlKey) {$(this).removeClass('flagged'); $(this).addClass('notclicked'); return}
+      if(lost||!$(this).hasClass('notclicked')) return
+
+      if(e.ctrlKey) {console.log('ctrl'); flag($(this))}
+      else click($(this))
+    })
+
+    $('.flagged').click(function () {
+      console.log('event')
+      $(this).removeClass('flagged')
+    })
+
+    $('.restartButton').click(function () {
+      restartGame()
+    })
