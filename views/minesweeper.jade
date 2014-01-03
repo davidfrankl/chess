@@ -7,22 +7,39 @@ block content
   div.contentBox
     div.heading
       div.minesLeft
-        <img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt=""><img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt=""><img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt="">
-      div.restartButton
-        <img src="http://www.freeminesweeper.org/images/facesmile.gif" name="face" hspace="12" border="0" width="26" height="26" alt="">
+        div.digitZero &nbsp;
+        div.digitOne &nbsp;
+        div.digitZero &nbsp;
+      div.face.facesmile &nbsp;
       div.timer
         <img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt=""><img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt=""><img src="http://www.freeminesweeper.org/images/time0.gif" border="0" name="bomb100s" width="13" height="23" alt="">
     div.board
       table
   script.
     var board = []
-    var lost = false
+    var gameOver = false
+    var numBombs = 10
+    var numFlagsLeft = numBombs
+
+
+    //init board
+    ;(function () {
+      for(var r=1; r<=8; r++) {
+        var row = $(document.createElement('tr'))
+        for(var c=1; c<=8; c++) {
+          row.append($(document.createElement('td')).addClass('notclicked').attr('row', ''+r).attr('col', ''+c))
+        }
+        $('table').append(row)
+      }
+    })()
 
     var restartGame = function () {
+      $('.face').removeClass('facedead').removeClass('facewin').addClass('facesmile')
       board = []
-      lost = false
+      gameOver = false
+      numFlagsLeft = numBombs
 
-      var numBombsLeft = 10
+      var numBombsLeft = numBombs
       var numCellsLeft = 64
       for(var r=1; r<=8; r++) {
         var row = []
@@ -40,7 +57,7 @@ block content
       }
 
       $('td').each(function () {
-        $(this).removeClass('clicked').removeClass('bomb').removeClass('flagged').removeClass('bombdead').addClass('notclicked')
+        $(this).removeClass('clicked').removeClass('bomb').removeClass('flagged').removeClass('misflagged').removeClass('bombdead').addClass('notclicked')
         .removeClass('one').removeClass('two').removeClass('three').removeClass('four').removeClass('five').removeClass('six').removeClass('seven').removeClass('eight').removeClass('nine')
       })
     }
@@ -49,11 +66,14 @@ block content
     var colorAllBombs = function () {
       for(var r=1; r<=8; r++) {
         for(var c=1; c<=8; c++) {
-          if(!board[r-1][c-1]) continue
 
-          console.log(r, c)
           var elem = $('[row="'+r+'"][col="'+c+'"]')
-          if(!elem.hasClass('bombdead')&&!elem.hasClass('flagged')) elem.addClass('bomb')
+
+          if(elem.hasClass('flagged')) {
+            if(!board[r-1][c-1]) elem.removeClass('flagged').addClass('misflagged')
+          } else {
+            if(board[r-1][c-1]&&!elem.hasClass('bombdead')) elem.addClass('bomb')
+          }
         }
       }
     }
@@ -78,9 +98,9 @@ block content
 
       var num = getNumber(r, c)
       var elem = $('[row="'+r+'"][col="'+c+'"]')
-      if(elem.hasClass('clicked')) return
+      if(elem.hasClass('clicked')||elem.hasClass('flagged')) return
       elem.addClass(numberToString[num])
-      elem.addClass('clicked')
+      elem.addClass('clicked').removeClass('notclicked')
 
       if(num==0) {
         setNumber(r-1, c-1)
@@ -101,35 +121,70 @@ block content
         , c = elem.attr('col')
 
       if(board[r-1][c-1]) {
-        lost = true
+        console.log('board bombdead')
+        gameOver = true
         elem.addClass('bombdead')
         colorAllBombs()
+        $('.face').removeClass('facesmile').addClass('facedead')
       } else {
         setNumber(r, c)
       }
     }
 
-    var flag = function (elem) {
-      console.log('flag')
-      elem.removeClass('notclicked')
-      elem.addClass('flagged')
-      console.log('hasClass notclicked? '+elem.hasClass('notclicked'))
+    var getPiece = function (elem) {
+      var r = Number(elem.attr('row'))-1
+      var c = Number(elem.attr('col'))-1
+
+      return board[r][c]
     }
 
-    for(var r=1; r<=8; r++) {
-      var row = $(document.createElement('tr'))
-      for(var c=1; c<=8; c++) {
-        row.append($(document.createElement('td')).addClass('notclicked').attr('row', ''+r).attr('col', ''+c))
+    var updateNumFlagsImages = function () {
+      var str = String(numFlagsLeft)
+      while (str.length<3) str = '0'+str
+
+      $('.minesLeft').find('div').eq(0).attr('class', '').addClass(digitClasses[Number(str[0])])
+      $('.minesLeft').find('div').eq(1).attr('class', '').addClass(digitClasses[Number(str[1])])
+      $('.minesLeft').find('div').eq(2).attr('class', '').addClass(digitClasses[Number(str[2])])
+    }
+
+    var digitClasses = ['digitZero', 'digitOne', 'digitTwo', 'digitThree', 'digitFour', 'digitFive', 'digitSix', 'digitSeven', 'digitEight', 'digitNine']
+    var flag = function (elem) {
+      numFlagsLeft --
+
+      if(getPiece(elem) == 0) incorrect=true
+
+      if(numFlagsLeft==0) {
+        $('.face').addClass('facewin').removeClass('facesmile')
+        gameOver = true
       }
-      $('table').append(row)
+
+      updateNumFlagsImages()
+
+      elem.removeClass('notclicked')
+      elem.addClass('flagged')
+
+
+    }
+
+    var unflag = function (elem) {
+      numFlagsLeft ++
+      elem.removeClass('flagged').addClass('notclicked')
+      updateNumFlagsImages()
     }
 
     $('.notclicked').mousedown(function (e) {
-      if($(this).hasClass('flagged')&&e.ctrlKey) {$(this).removeClass('flagged'); $(this).addClass('notclicked'); return}
-      if(lost||!$(this).hasClass('notclicked')) return
+      if(gameOver) return
 
-      if(e.ctrlKey) {console.log('ctrl'); flag($(this))}
-      else click($(this))
+      if(e.ctrlKey) {
+        if($(this).hasClass('flagged')) unflag($(this))
+        else flag($(this))
+
+        return
+      }
+
+      if(!$(this).hasClass('notclicked')) return
+      
+      click($(this))
     })
 
     $('.flagged').click(function () {
@@ -137,6 +192,6 @@ block content
       $(this).removeClass('flagged')
     })
 
-    $('.restartButton').click(function () {
+    $('.face').click(function () {
       restartGame()
     })

@@ -16,9 +16,45 @@ body
     img
       margin 0
     .minesLeft
-      float left
-    .restartButton
-      margin-left 20px
+      *
+        background-size 100%
+        width 13px
+        height 23px
+        display inline-block
+      .digitZero
+        background-image url("http://www.freeminesweeper.org/images/time0.gif")
+      .digitOne
+        background-image url("http://www.freeminesweeper.org/images/time1.gif")
+      .digitTwo
+        background-image url("http://www.freeminesweeper.org/images/time2.gif")
+      .digitThree
+        background-image url("http://www.freeminesweeper.org/images/time3.gif")
+      .digitFour
+        background-image url("http://www.freeminesweeper.org/images/time4.gif")
+      .digitFive
+        background-image url("http://www.freeminesweeper.org/images/time5.gif")
+      .digitSix
+        background-image url("http://www.freeminesweeper.org/images/time6.gif")
+      .digitSeven
+        background-image url("http://www.freeminesweeper.org/images/time7.gif")
+      .digitEight
+        background-image url("http://www.freeminesweeper.org/images/time8.gif")
+      .digitNine
+        background-image url("http://www.freeminesweeper.org/images/time9.gif")
+    .face
+      width 26px
+      height 26px
+      display inline-block
+      margin-left 25px
+      &.facesmile
+        background-size 100%
+        background-image url("http://www.freeminesweeper.org/images/facesmile.gif")
+      &.facewin
+        background-size 100%
+        background-image url("http://www.freeminesweeper.org/images/facewin.gif")
+      &.facedead
+        background-size 100%
+        background-image url("http://www.freeminesweeper.org/images/facedead.gif")
     .timer
       float right
   table
@@ -47,32 +83,46 @@ body
       &.one
         background-image url("http://www.freeminesweeper.org/images/open1.gif")
         background-size 100%
+        border-width 0
       &.two
         background-image url("http://www.freeminesweeper.org/images/open2.gif")
         background-size 100%
+        border-width 0
       &.three
         background-image url("http://www.freeminesweeper.org/images/open3.gif")
         background-size 100%
+        border-width 0
       &.four
         background-image url("http://www.freeminesweeper.org/images/open4.gif")
         background-size 100%
+        border-width 0
       &.five
         background-image url("http://www.freeminesweeper.org/images/open5.gif")
         background-size 100%
+        border-width 0
       &.six
         background-image url("http://www.freeminesweeper.org/images/open6.gif")
         background-size 100%
+        border-width 0
       &.seven
         background-image url("http://www.freeminesweeper.org/images/open7.gif")
         background-size 100%
+        border-width 0
       &.eight
         background-image url("http://www.freeminesweeper.org/images/open8.gif")
         background-size 100%
+        border-width 0
       &.nine
         background-image url("http://www.freeminesweeper.org/images/open9.gif")
         background-size 100%
+        border-width 0
       &.flagged
         background-image url("http://www.freeminesweeper.org/images/bombflagged.gif")
         background-size 100%
+        border-width 0
+      &.misflagged
+        background-image url("http://www.freeminesweeper.org/images/bombmisflagged.gif")
+        background-size 100%
+        border-width 0
 
 
