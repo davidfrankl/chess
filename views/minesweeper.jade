@@ -17,10 +17,15 @@ block content
         div.digitZero &nbsp;
     div.board
       table
+  div.btn-group
+    button.btn.btn-primary.active.sweep Sweep
+    button.btn.btn-primary.flag Flag
   script.
     var digitClasses = ['digitZero', 'digitOne', 'digitTwo', 'digitThree', 'digitFour', 'digitFive', 'digitSix', 'digitSeven', 'digitEight', 'digitNine']
 
     var game
+
+    var flagging = false
 
     //init board
     ;(function () {
@@ -66,7 +71,7 @@ block content
     }
 
     Game.prototype.terminate = function () {
-      gameOver = true
+      game.gameOver = true
       stopTimer()
     }
 
@@ -133,7 +138,7 @@ block content
           if(elem.hasClass('flagged')) {
             if(!game.board[r-1][c-1]) elem.removeClass('flagged').addClass('misflagged')
           } else {
-            if(game.board[r-1][c-1]&&!elem.hasClass('bombdead')) elem.addClass('bomb')
+            if(game.board[r-1][c-1]&&!elem.hasClass('bombdead')) elem.addClass('bomb').addClass('clicked').removeClass('notclicked')
           }
         }
       }
@@ -227,7 +232,7 @@ block content
         }, 1000)
       }
 
-      if(e.ctrlKey) {
+      if(e.ctrlKey||flagging) {
         if($(this).hasClass('flagged')) unflag($(this))
         else if($(this).hasClass('notclicked')) flag($(this))
 
@@ -241,4 +246,16 @@ block content
 
     $('.face').click(function () {
       restartGame()
+    })
+
+    $('.sweep').click(function () {
+      flagging = false
+      $('button').removeClass('active')
+      $('.sweep').addClass('active')
+
+    })
+    $('.flag').click(function () {
+      flagging = true
+      $('button').removeClass('active')
+      $('.flag').addClass('active')
     })
