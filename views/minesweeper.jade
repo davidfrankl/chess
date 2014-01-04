@@ -20,6 +20,7 @@ block content
   div.btn-group
     button.btn.btn-primary.active.sweep Sweep
     button.btn.btn-primary.flag Flag
+  button.btn.btn-primary.hint Hint
   script.
     var digitClasses = ['digitZero', 'digitOne', 'digitTwo', 'digitThree', 'digitFour', 'digitFive', 'digitSix', 'digitSeven', 'digitEight', 'digitNine']
     var game
@@ -149,11 +150,83 @@ block content
     }
     restartGame()
 
+    var judgements = {
+        'bomb': 'bomb'
+      , 'clear': 'clear'
+      , 'unknown': 'unknown'
+    }
+
+    var foundAllFlags = function (row, col) {
+      if(row<1||col<1||row>8||col>8||game.board[row][col]==state.unclicked||game.board[row][col]==state.flagged) return false
+
+      return (getNumFlaggedNeighbors(row, col)==game.board[row][col])
+    }
+
+    var getNumFlaggedNeighbors = function (row, col) {
+      var numFlagged = 0
+      for(var r=row-1; r<=row+1; r++) {
+        for(var c=col-1; c<=col+1; c++) {
+          if(r<1||c<1||r>8||c>8) continue
+
+          if(game.board[r][c]==state.flagged) numFlagged++
+        }
+      }
+      return numFlagged
+    }
+
+    var getNumUnclickedNeighbors = function (row, col) {
+      var numUnclicked = 0
+      for(var r=row-1; r<=row+1; r++) {
+        for(var c=col-1; c<=col+1; c++) {
+          if(r<1||c<1||r>8||c>8) continue
+
+          if(game.board[r][c]==state.unclicked) numUnclicked++
+        }
+      }
+      return numUnclicked
+    }
+
+    var mustBeFlag = function (row, col) {
+      console.log('mustBeFlag, row: '+row+', col: '+col)
+      for(var r=row-1; r<=row+1; r++) {
+        for(var c=col-1; c<=col+1; c++) {
+          if(r<1||c<1||r>8||c>8||game.board[r][c]==state.unclicked||game.board[r][c]==state.flagged) continue
+
+          console.log('gameBoard['+r+']['+c+']: '+game.board[r][c]+', getNumFlaggedNeighbors: '+getNumFlaggedNeighbors(r, c)+', getNumUnclickedNeighbors: '+getNumUnclickedNeighbors(r, c))
+          if(game.board[r][c]-getNumFlaggedNeighbors(r, c)==getNumUnclickedNeighbors(r, c)) return true
+        }
+      }
+      return false
+    }
+
+    var getJudgement = function (row, col) {
+      if(game.board[row][col]!=state.unclicked) return false
+
+      if(mustBeFlag(row, col)) return judgements.bomb
+
+      for(var r=row-1; r<=row+1; r++) {
+        for(var c=col-1; c<=col+1; c++) {
+          if(foundAllFlags(r, c)) return judgements.clear
+        }
+      }
+      return judgements.unknown
+    }
+
+    var findMove = function () {
+      for(var r=1; r<=8; r++) {
+        for(var c=1; c<=8; c++) {
+          var judgement = getJudgement(r, c)
+          if(judgement==judgements.clear) click(null, r, c)
+          else if(judgement==judgements.bomb) flag(null, r, c)
+        }
+      }
+    }
+
     var colorAllBombs = function () {
       for(var r=1; r<=8; r++) {
         for(var c=1; c<=8; c++) {
 
-          var elem = $('[row="'+r+'"][col="'+c+'"]')
+          var elem = getElem(r, c)
 
           if(game.board[r][c]==state.flagged) {
             if(!game.bombs[r][c]) elem.removeClass('flagged').addClass('misflagged')
@@ -180,7 +253,7 @@ block content
 
       var num = getNumber(r, c)
 
-      var elem = $('[row="'+r+'"][col="'+c+'"]')
+      var elem = getElem(r, c)
       if(game.board[r][c] == state.flagged || game.board[r][c] != state.unclicked) return
       elem.addClass(numberToString[num]).addClass('clicked').removeClass('notclicked')
       game.board[r][c] = num
@@ -197,11 +270,15 @@ block content
       }
     }
 
-    var click = function (elem) {
-      elem.removeClass('notclicked')
+    var click = function (elem, r, c) {
+      if(elem) {
+        r = Number(elem.attr('row'))
+        c = Number(elem.attr('col'))
+      } else {
+        elem = getElem(r, c)
+      }
 
-      var r = Number(elem.attr('row'))
-        , c = Number(elem.attr('col'))
+      elem.removeClass('notclicked')
 
       if(game.bombs[r][c]) {
         game.lose(elem)
@@ -210,7 +287,7 @@ block content
       }
     }
 
-    var getPiece = function (elem) {
+    var isBomb = function (elem) {
       var r = Number(elem.attr('row'))
       var c = Number(elem.attr('col'))
 
@@ -221,15 +298,22 @@ block content
       var r = Number(elem.attr('row'))
       var c = Number(elem.attr('col'))
 
-      game.bombs[r][c] = val
+      game.board[r][c] = val
+    }
+
+    var getElem = function (r, c) {
+      return $('[row="'+r+'"][col="'+c+'"]')
     }
   
-    var flag = function (elem) {
+    var incorrect = false
+    var flag = function (elem, r, c) {
       if(game.numFlagsLeft==0) return
+
+      if(!elem) elem = getElem(r, c)
 
       game.numFlagsLeft --
 
-      if(getPiece(elem) == 0) incorrect=true
+      if(!isBomb(elem)) incorrect=true
 
       if(game.numFlagsLeft==0&&!incorrect) game.win()
 
@@ -286,4 +370,8 @@ block content
       flagging = true
       $('button').removeClass('active')
       $('.flag').addClass('active')
+    })
+    $('.hint').click(function () {
+      $(this).removeClass('active')
+      findMove()
     })
