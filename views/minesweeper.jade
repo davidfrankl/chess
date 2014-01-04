@@ -229,7 +229,7 @@ block content
 
       if(e.ctrlKey) {
         if($(this).hasClass('flagged')) unflag($(this))
-        else flag($(this))
+        else if($(this).hasClass('notclicked')) flag($(this))
 
         return
       }
@@ -237,11 +237,6 @@ block content
       if(!$(this).hasClass('notclicked')) return
       
       click($(this))
-    })
-
-    $('.flagged').click(function () {
-      console.log('event')
-      $(this).removeClass('flagged')
     })
 
     $('.face').click(function () {
