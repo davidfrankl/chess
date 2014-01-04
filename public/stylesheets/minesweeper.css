@@ -20,40 +20,51 @@ body {
 .contentBox .heading img {
   margin: 0;
 }
-.contentBox .heading .minesLeft * {
+.contentBox .heading .minesLeft *,
+.contentBox .heading .timer * {
   background-size: 100%;
-  width: 13px;
-  height: 23px;
+  width: 15px;
+  height: 26px;
   display: inline-block;
 }
-.contentBox .heading .minesLeft .digitZero {
+.contentBox .heading .minesLeft .digitZero,
+.contentBox .heading .timer .digitZero {
   background-image: url("http://www.freeminesweeper.org/images/time0.gif");
 }
-.contentBox .heading .minesLeft .digitOne {
+.contentBox .heading .minesLeft .digitOne,
+.contentBox .heading .timer .digitOne {
   background-image: url("http://www.freeminesweeper.org/images/time1.gif");
 }
-.contentBox .heading .minesLeft .digitTwo {
+.contentBox .heading .minesLeft .digitTwo,
+.contentBox .heading .timer .digitTwo {
   background-image: url("http://www.freeminesweeper.org/images/time2.gif");
 }
-.contentBox .heading .minesLeft .digitThree {
+.contentBox .heading .minesLeft .digitThree,
+.contentBox .heading .timer .digitThree {
   background-image: url("http://www.freeminesweeper.org/images/time3.gif");
 }
-.contentBox .heading .minesLeft .digitFour {
+.contentBox .heading .minesLeft .digitFour,
+.contentBox .heading .timer .digitFour {
   background-image: url("http://www.freeminesweeper.org/images/time4.gif");
 }
-.contentBox .heading .minesLeft .digitFive {
+.contentBox .heading .minesLeft .digitFive,
+.contentBox .heading .timer .digitFive {
   background-image: url("http://www.freeminesweeper.org/images/time5.gif");
 }
-.contentBox .heading .minesLeft .digitSix {
+.contentBox .heading .minesLeft .digitSix,
+.contentBox .heading .timer .digitSix {
   background-image: url("http://www.freeminesweeper.org/images/time6.gif");
 }
-.contentBox .heading .minesLeft .digitSeven {
+.contentBox .heading .minesLeft .digitSeven,
+.contentBox .heading .timer .digitSeven {
   background-image: url("http://www.freeminesweeper.org/images/time7.gif");
 }
-.contentBox .heading .minesLeft .digitEight {
+.contentBox .heading .minesLeft .digitEight,
+.contentBox .heading .timer .digitEight {
   background-image: url("http://www.freeminesweeper.org/images/time8.gif");
 }
-.contentBox .heading .minesLeft .digitNine {
+.contentBox .heading .minesLeft .digitNine,
+.contentBox .heading .timer .digitNine {
   background-image: url("http://www.freeminesweeper.org/images/time9.gif");
 }
 .contentBox .heading .face {
@@ -87,6 +98,7 @@ body {
 .contentBox table td {
   width: 20px;
   height: 20px;
+  background-size: 100%;
 }
 .contentBox table td.notclicked {
   border-width: 2px;
@@ -100,64 +112,52 @@ body {
 }
 .contentBox table td.bombdead {
   background-image: url("http://www.freeminesweeper.org/images/bombdeath.gif");
-  background-size: 100%;
 }
 .contentBox table td.bomb {
   background-image: url("http://www.freeminesweeper.org/images/bombrevealed.gif");
-  background-size: 100%;
 }
 .contentBox table td.one {
   background-image: url("http://www.freeminesweeper.org/images/open1.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.two {
   background-image: url("http://www.freeminesweeper.org/images/open2.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.three {
   background-image: url("http://www.freeminesweeper.org/images/open3.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.four {
   background-image: url("http://www.freeminesweeper.org/images/open4.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.five {
   background-image: url("http://www.freeminesweeper.org/images/open5.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.six {
   background-image: url("http://www.freeminesweeper.org/images/open6.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.seven {
   background-image: url("http://www.freeminesweeper.org/images/open7.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.eight {
   background-image: url("http://www.freeminesweeper.org/images/open8.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.nine {
   background-image: url("http://www.freeminesweeper.org/images/open9.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.flagged {
+  height: 16px;
   background-image: url("http://www.freeminesweeper.org/images/bombflagged.gif");
-  background-size: 100%;
   border-width: 0;
 }
 .contentBox table td.misflagged {
   background-image: url("http://www.freeminesweeper.org/images/bombmisflagged.gif");
-  background-size: 100%;
   border-width: 0;
 }
