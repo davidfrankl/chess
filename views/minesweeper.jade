@@ -22,10 +22,22 @@ block content
     button.btn.btn-primary.flag Flag
   script.
     var digitClasses = ['digitZero', 'digitOne', 'digitTwo', 'digitThree', 'digitFour', 'digitFive', 'digitSix', 'digitSeven', 'digitEight', 'digitNine']
-
     var game
-
     var flagging = false
+    var state = {
+        'unclicked': 'unclicked'
+      , '0': 0
+      , '1': 1
+      , '2': 2
+      , '3': 3
+      , '4': 4
+      , '5': 5
+      , '6': 6
+      , '7': 7
+      , '8': 8
+      , '9': 9      
+      , 'flagged': 'flagged'
+    }
 
     //init board
     ;(function () {
@@ -39,6 +51,7 @@ block content
     })()
 
     function Game () {
+      this.bombs = {}
       this.board = []
       this.gameOver = false
       this.numBombs = 10
@@ -54,18 +67,25 @@ block content
     Game.prototype.initBombs = function () {
       var numBombsLeft = this.numBombs
       var numCellsLeft = 64
+
+      this.board.push(null)
+
       for(var r=1; r<=8; r++) {
-        var row = []
+        this.bombs[r] = {}
+
+        var row = [null]
+
         for(var c=1; c<=8; c++) {
-          var isBomb = false
           if(Math.floor(Math.random()*numCellsLeft)<numBombsLeft) {
             numBombsLeft--
-            row.push(1)
+            this.bombs[r][c] = true
           } else {
-            row.push(0)
+            this.bombs[r][c] = false
           }
           numCellsLeft--
+          row.push(state.unclicked)
         }
+
         this.board.push(row)
       }
     }
@@ -135,21 +155,20 @@ block content
 
           var elem = $('[row="'+r+'"][col="'+c+'"]')
 
-          if(elem.hasClass('flagged')) {
-            if(!game.board[r-1][c-1]) elem.removeClass('flagged').addClass('misflagged')
+          if(game.board[r][c]==state.flagged) {
+            if(!game.bombs[r][c]) elem.removeClass('flagged').addClass('misflagged')
           } else {
-            if(game.board[r-1][c-1]&&!elem.hasClass('bombdead')) elem.addClass('bomb').addClass('clicked').removeClass('notclicked')
+            if(game.bombs[r][c]&&!elem.hasClass('bombdead')) elem.addClass('bomb').addClass('clicked').removeClass('notclicked')
           }
         }
       }
     }
 
     var getNumber = function (row, col) {
-      row = Number(row), col=Number(col)
       var numNeighbors = 0
-      for(var r=row-2; r<row+1; r++) {
-        for(var c=col-2; c<col+1; c++) {
-          if(r>=0&&c>=0&&r<8&&c<8&&(r!=row-1||c!=col-1)&&game.board[r][c]) numNeighbors++
+      for(var r=row-1; r<=row+1; r++) {
+        for(var c=col-1; c<=col+1; c++) {
+          if(r>0&&c>0&&r<=8&&c<=8&&(r!=row||c!=col)&&game.bombs[r][c]) numNeighbors++
         }
       }
       return numNeighbors
@@ -157,16 +176,14 @@ block content
 
     var numberToString = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
     var setNumber = function (r, c) {
-      r = Number(r), c=Number(c)
-
       if(r<1||r>8||c<1||c>8) return
-      console.log('setNumber: '+r,c)
 
       var num = getNumber(r, c)
+
       var elem = $('[row="'+r+'"][col="'+c+'"]')
-      if(elem.hasClass('clicked')||elem.hasClass('flagged')) return
-      elem.addClass(numberToString[num])
-      elem.addClass('clicked').removeClass('notclicked')
+      if(game.board[r][c] == state.flagged || game.board[r][c] != state.unclicked) return
+      elem.addClass(numberToString[num]).addClass('clicked').removeClass('notclicked')
+      game.board[r][c] = num
 
       if(num==0) {
         setNumber(r-1, c-1)
@@ -183,10 +200,10 @@ block content
     var click = function (elem) {
       elem.removeClass('notclicked')
 
-      var r = elem.attr('row')
-        , c = elem.attr('col')
+      var r = Number(elem.attr('row'))
+        , c = Number(elem.attr('col'))
 
-      if(game.board[r-1][c-1]) {
+      if(game.bombs[r][c]) {
         game.lose(elem)
       } else {
         setNumber(r, c)
@@ -194,35 +211,46 @@ block content
     }
 
     var getPiece = function (elem) {
-      var r = Number(elem.attr('row'))-1
-      var c = Number(elem.attr('col'))-1
+      var r = Number(elem.attr('row'))
+      var c = Number(elem.attr('col'))
 
-      return game.board[r][c]
+      return game.bombs[r][c]
+    }
+
+    var setPiece = function (elem, val) {
+      var r = Number(elem.attr('row'))
+      var c = Number(elem.attr('col'))
+
+      game.bombs[r][c] = val
     }
   
     var flag = function (elem) {
+      if(game.numFlagsLeft==0) return
+
       game.numFlagsLeft --
 
       if(getPiece(elem) == 0) incorrect=true
 
-      if(game.numFlagsLeft==0) {
-        game.win()
-      }
+      if(game.numFlagsLeft==0&&!incorrect) game.win()
 
       updateNumFlagsImages(game.numFlagsLeft)
 
       elem.attr('class', 'flagged')
+      setPiece(elem, state.flagged)
     }
 
     var unflag = function (elem) {
       game.numFlagsLeft ++
+
       elem.removeClass('flagged').addClass('notclicked')
+
       updateNumFlagsImages(game.numFlagsLeft)
+
+      setPiece(elem, state.unclicked)
     }
 
     $('.notclicked').mousedown(function (e) {
       if(game.gameOver) return
-      console.log('clciked')
 
       if(!game.firstClicked) {
         game.firstClicked = true
